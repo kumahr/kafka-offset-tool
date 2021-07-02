@@ -1,0 +1,13 @@
+{
+  "env": "ENV",
+  "topics": [
+    {
+      "topic": "topic_name",
+      "group": "consumerGroup",
+      "date": "2021-01-08T14:00:00.000",
+      "offset": 0,
+      "partitions": [0, 1, 2],
+      "reset_mode": "EARLIEST"
+    }
+  ]
+}

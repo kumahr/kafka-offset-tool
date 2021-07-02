@@ -18,15 +18,13 @@ type Topic struct {
 	Date       string
 	Offset     int
 	Partitions []int
-	ResetMode  int `json:"reset_mode"`
+	ResetMode  string `json:"reset_mode"`
 }
 
 type Topics struct {
 	Env    string
 	Topics []Topic
 }
-
-type Options string
 
 const (
 	EARLIEST  = "--to-earliest"
@@ -36,21 +34,25 @@ const (
 	ALLTOPICS = "--all-topics"
 )
 
-func getOptions() []string {
-	return []string{"--to-earliest", "-to-latest", "--to-datetime", "--to-offset"}
+func getOptions() map[string]string {
+	m := make(map[string]string)
+	m["EARLIEST"] = "--to-earliest"
+	m["LATEST"] = "--to-latest"
+	m["DATETIME"] = "--to-datetime"
+	m["OFFSET"] = "--to-offset"
+	return m
 }
 
 func buildCommand(env *string, topic *Topic, broker *string) string {
-	resetId := topic.ResetMode
-	if resetId < 0 || resetId > len(getOptions())-1 {
-		fmt.Printf("Reset option %d is unknown", resetId)
+	resetMode, exist := getOptions()[topic.ResetMode]
+	if !exist {
+		fmt.Printf("reset mode %s is not valid!\n", topic.ResetMode)
 		return ""
 	}
-	resetMode := getOptions()[resetId]
+	allTopics := ALLTOPICS
 	var (
 		offset     string
 		datetime   string
-		allTopics  string
 		partitions string
 	)
 	switch resetMode {
@@ -65,7 +67,7 @@ func buildCommand(env *string, topic *Topic, broker *string) string {
 		for _, topicPartition := range topic.Partitions {
 			stringPartitions = append(stringPartitions, strconv.Itoa(topicPartition))
 		}
-		allTopics = ALLTOPICS
+		allTopics = "--topic"
 		partitions = strings.Join(stringPartitions, ",")
 		topicValue = fmt.Sprintf("%s:%s", topic.Topic, partitions)
 	}
@@ -78,7 +80,12 @@ func buildCommand(env *string, topic *Topic, broker *string) string {
 }
 
 func resetConsumerGroup(env *string, topic *Topic, broker *string) {
-	args := strings.Split(buildCommand(env, topic, broker), " ")
+	result := buildCommand(env, topic, broker)
+	if result == "" {
+		return
+	}
+	args := strings.Split(result, " ")
+	fmt.Println(args)
 	command := args[0]
 	cmd := exec.Command(command, args[1:]...)
 	out, err := cmd.CombinedOutput()

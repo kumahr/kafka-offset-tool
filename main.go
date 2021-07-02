@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"strconv"
@@ -18,13 +19,15 @@ type Topic struct {
 	Date       string
 	Offset     int
 	Partitions []int
-	ResetMode  string `json:"reset_mode"`
+	ResetMode  int `json:"reset_mode"`
 }
 
 type Topics struct {
 	Env    string
 	Topics []Topic
 }
+
+type Options string
 
 const (
 	EARLIEST  = "--to-earliest"
@@ -34,25 +37,21 @@ const (
 	ALLTOPICS = "--all-topics"
 )
 
-func getOptions() map[string]string {
-	m := make(map[string]string)
-	m["EARLIEST"] = "--to-earliest"
-	m["LATEST"] = "--to-latest"
-	m["DATETIME"] = "--to-datetime"
-	m["OFFSET"] = "--to-offset"
-	return m
+func getOptions() []string {
+	return []string{"--to-earliest", "-to-latest", "--to-datetime", "--to-offset"}
 }
 
 func buildCommand(env *string, topic *Topic, broker *string) string {
-	resetMode, exist := getOptions()[topic.ResetMode]
-	if !exist {
-		fmt.Printf("reset mode %s is not valid!\n", topic.ResetMode)
+	resetId := topic.ResetMode
+	if resetId < 0 || resetId > len(getOptions())-1 {
+		log.Printf("Reset option %d is unknown", resetId)
 		return ""
 	}
-	allTopics := ALLTOPICS
+	resetMode := getOptions()[resetId]
 	var (
 		offset     string
 		datetime   string
+		allTopics  string
 		partitions string
 	)
 	switch resetMode {
@@ -67,7 +66,7 @@ func buildCommand(env *string, topic *Topic, broker *string) string {
 		for _, topicPartition := range topic.Partitions {
 			stringPartitions = append(stringPartitions, strconv.Itoa(topicPartition))
 		}
-		allTopics = "--topic"
+		allTopics = ALLTOPICS
 		partitions = strings.Join(stringPartitions, ",")
 		topicValue = fmt.Sprintf("%s:%s", topic.Topic, partitions)
 	}
@@ -80,31 +79,26 @@ func buildCommand(env *string, topic *Topic, broker *string) string {
 }
 
 func resetConsumerGroup(env *string, topic *Topic, broker *string) {
-	result := buildCommand(env, topic, broker)
-	if result == "" {
-		return
-	}
-	args := strings.Split(result, " ")
-	fmt.Println(args)
+	args := strings.Split(buildCommand(env, topic, broker), " ")
 	command := args[0]
 	cmd := exec.Command(command, args[1:]...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
-	fmt.Println(string(out))
+	log.Println(string(out))
 }
 
 func main() {
 	topicsFile, err := ioutil.ReadFile(TOPICS_FILE)
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 	var topics Topics
 	err2 := json.Unmarshal(topicsFile, &topics)
 	if err2 != nil {
-		panic(err2)
+		log.Fatalln(err2)
 	}
 	broker := os.Getenv(fmt.Sprintf("BROKERS_%s", topics.Env))
 	for _, topic := range topics.Topics {

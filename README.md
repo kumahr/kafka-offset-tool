@@ -20,7 +20,7 @@ go build
 You can also specify the name of the executable:
 
 ```bash
-go build -o hermes-kafka-offset
+go build -o kafka-offset-tool
 ```
 
 If you want to build for multiple platforms, see the [documentation](https://www.digitalocean.com/community/tutorials/how-to-build-go-executables-for-multiple-platforms-on-ubuntu-16-04)
@@ -28,7 +28,7 @@ If you want to build for multiple platforms, see the [documentation](https://www
 ## Usage
 
 ```bash
-./hermes-kafka-offset
+./kafka-offset-tool
 ```
 
 The executable can be anywhere on your filesystem as long as the following file `topics.json` is in the execution directory.

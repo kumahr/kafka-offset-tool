@@ -5,7 +5,7 @@ A simple Go tool to reset kafka offsets.
 ## Requirements
 
 - [Download](https://kafka.apache.org/downloads) kafka binaires
-  Add the `bin` folder to your path
+- Add the `bin` folder to your path
 - Add your `jks` files to `/opt/secrets`
 - Add `secu.build.config` and `secu.prod.config` to `/opt/secrets`
 
